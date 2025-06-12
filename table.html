@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grouped Stock Availability - GP Fax</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background: #f4f8fb;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 90%;
+      border-collapse: collapse;
+      margin: 0 auto 40px auto;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    .article-header {
+      background-color: #cce5ff;
+      font-weight: bold;
+    }
+    .color-header {
+      background-color: #e8f4ff;
+    }
+    #backBtn {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      display: inline-block;
+      margin-bottom: 30px;
+    }
+    #backBtn:hover {
+      background-color: #218838;
+    }
+
+    /* Media Queries */
+    @media screen and (max-width: 768px) {
+      table {
+        font-size: 14px;
+      }
+      th, td {
+        padding: 8px 12px;
+      }
+      #backBtn {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      table {
+        font-size: 12px;
+      }
+      th, td {
+        padding: 6px 10px;
+      }
+      #backBtn {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" id="backBtn">← Back to Add Stock</a>
+  <h2>Grouped Stock Availability</h2>
+  <div style="text-align: center; margin-bottom: 20px;">
+    <input type="text" id="searchBox" placeholder="🔍 Search by Article..." oninput="loadStockList()" style="padding: 10px 15px; font-size: 16px; width: 300px; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+  </div>
+  
+  <div id="stockList"></div>
+
+ 
+  <script>
+    async function loadStockList() {
+      const res = await fetch("/stock-list");
+      const stocks = await res.json();
+      const searchQuery = document.getElementById("searchBox")?.value.toLowerCase() || "";
+  
+      let table = "<table><tr><th>Article</th><th>Color</th><th>Gender</th><th>Size</th><th>Quantity</th><th>Action</th></tr>";
+  
+      for (let article in stocks) {
+        if (!article.toLowerCase().includes(searchQuery)) continue;
+  
+        let totalQty = 0;
+        let firstRow = true;
+  
+        for (let color in stocks[article]) {
+          const gender = stocks[article][color].gender;
+          const sizes = stocks[article][color].sizes;
+  
+          for (let size in sizes) {
+            const qty = sizes[size];
+            totalQty += qty;
+  
+            table += `<tr>
+                        <td>${firstRow ? article : ''}</td>
+                        <td>${color}</td>
+                        <td>${gender}</td>
+                        <td>${size}</td>
+                        <td>${qty}</td>
+                        <td><button onclick="deleteStock('${article}', '${color}', '${size}')">🗑️ Delete</button></td>
+                      </tr>`;
+            firstRow = false;
+          }
+        }
+  
+        table += `<tr style="background:#dff0d8; font-weight:bold;">
+                    <td colspan="4">Total for ${article}</td>
+                    <td colspan="2">${totalQty}</td>
+                  </tr>`;
+      }
+  
+      table += "</table>";
+      document.getElementById("stockList").innerHTML = table;
+    }
+  
+    async function deleteStock(articleName, color, size) {
+      if (confirm(`Are you sure you want to delete stock: ${articleName} - ${color} - Size ${size}?`)) {
+        try {
+          const res = await fetch(`/delete-stock`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ articleName, color, size })
+          });
+          const msg = await res.text();
+          alert(msg);
+          loadStockList(); // Refresh table
+        } catch (err) {
+          alert("❌ Error deleting stock");
+        }
+      }
+    }
+  
+    loadStockList();
+  </script>
+  
+</body>
+</html> 
+

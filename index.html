@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GP Fax Inventory Form</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>👟 GP Fax Inventory Management</h1>
+
+    <form id="stockForm">
+      <h2>📝 Add New Stock Item</h2>
+      <label>Stock Type:</label>
+      <select name="stockType" required>
+        <option value="">Select</option>
+        <option value="in">Stock In</option>
+        <option value="out">Stock Out</option>
+      </select>
+
+      <label>Material:</label>
+      <select name="material" required>
+        <option value="">Select</option>
+        <option value="PU">PU</option>
+        <option value="EVA">EVA</option>
+      </select>
+
+      <label>Article Name:</label>
+      <input type="text" name="articleName" required>
+
+      <label>Color:</label>
+      <input type="text" name="color" required>
+
+      <label>Size:</label>
+      <input type="number" name="size" required>
+
+      <label>Gender:</label>
+      <select name="gender" required>
+        <option value="">Select</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="kids">Kids</option>
+      </select>
+
+      <label>No. of Cartons:</label>
+      <input type="number" name="cartons" required>
+
+      <label>Quantity per Carton:</label>
+      <input type="number" name="quantityPerCarton" required>
+
+      <label>Price per Pair (₹):</label>
+      <input type="number" name="price" required>
+
+      <label>SKU:</label>
+      <input type="text" name="sku" required>
+
+      <button type="submit">Add Stock</button>
+    </form>
+
+    <button class="green-button" onclick="window.location.href='table.html'">📊 View Grouped Stock Data</button>
+
+    <div class="pdf-section">
+      <h3>📄 Generate Stock Report PDF</h3>
+      <label for="categorySelector">Select Category:</label>
+      <select id="categorySelector">
+        <option value="all">All</option>
+        <option value="male">Men</option>
+        <option value="female">Women</option>
+        <option value="kids">Kids</option>
+        <option value="PU">PU</option>
+        <option value="EVA">EVA</option>
+      </select>
+      <button id="generatePdfButton">Generate PDF</button>
+    </div>
+  </div>
+
+   <script>
+    
+    document.getElementById("stockForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(this).entries());
+      formData.cartons = parseInt(formData.cartons);
+      formData.quantityPerCarton = parseInt(formData.quantityPerCarton);
+      formData.size = formData.size.toString();
+      formData.price = parseFloat(formData.price);
+
+      try {
+        const res = await fetch("/add-stock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+        const msg = await res.text();
+        alert(msg);
+        this.reset();
+      } catch (error) {
+        alert("❌ Error adding stock");
+      }
+    });
+
+    document.getElementById("generatePdfButton").addEventListener("click", function () {
+      const category = document.getElementById("categorySelector").value;
+      fetch(`/generate-pdf/${category}`)
+        .then(res => res.blob())
+        .then(blob => {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `${category}_Stock_Report.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })
+        .catch(error => console.error("Error generating PDF:", error));
+    });
+  </script>  
+  
+
+</body>
+</html>
